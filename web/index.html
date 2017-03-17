@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SMS Consumer</title>
+    <link rel="stylesheet" href="jquery.mobile-1.4.5.min.css">
+    <script src="jquery.min.js"></script>
+    <script src="jquery.mobile-1.4.5.min.js"></script>
+
+    <script type="text/javascript" src="jsencrypt.js"></script>
+    <script type="text/javascript" src="dessrc.js"></script>
+    <script type="text/javascript" src="commons.js"></script>
+</head>
+
+<script type="text/javascript">
+    $(function() {
+        $("#dialog").dialog({
+            autoOpen: false,
+            show: {
+                effect: "blind",
+                duration: 1000
+            },
+            hide: {
+                effect: "explode",
+                duration: 1000
+            }
+        });
+
+        if (localStorage != null) {
+            var publickey = localStorage.getItem("publickey");
+            if (publickey != null) {
+                $('#pubkey').val(publickey);
+            }
+            var privatekey = localStorage.getItem("privatekey");
+            if (privatekey != null) {
+                $('#privkey').val(privatekey);
+            }
+        }
+
+        $('#testme').click(function() {
+            if (localStorage != null) {
+                localStorage.setItem("publickey", $('#pubkey').val());
+                localStorage.setItem("privatekey", $('#privkey').val());
+            }
+
+            $("#list").empty();
+
+            var publickey = escape($('#pubkey').val().replace(/\-{5}.*\-{5}/g, "").replace(/[\r\n]/g, ""))
+            $.ajax({
+                url: "/message",
+                jsonp: "jsonp",
+                dataType: "jsonp",
+                data: {
+                    publickey: publickey
+                },
+
+                success: function(response) {
+                    console.log("cost", response.cost);
+                    var totalStartTime = new Date().getTime();
+                    for (var i = 0; i < response.list.length; i++) {
+                        var startTime = new Date().getTime();
+                        var obj = response.list[i]
+                        var decrypt = new JSEncrypt();
+                        decrypt.setPrivateKey($('#privkey').val());
+                        var uncrypted = decrypt.decrypt(obj.msg_deskey);
+                        var decrypt_it = function(msg){
+                          var result = des(uncrypted, base64decode(msg), 0, 1, base64decode(obj.msg_iv));
+                          var resulthex = stringToHex(result);
+
+                          var reg = /[0-9A-Za-z]{2}/g;
+                          var temp = "%" + resulthex.match(reg).join("%");
+                          return decodeURIComponent(temp);
+                        }
+                        var date = new Date(obj.msg_date)
+
+                        var text = obj.deviceid.substring(0,3) + " [" + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "] "
+                          + decrypt_it(obj.msg_person)
+                          + "(" + decrypt_it(obj.msg_address) + "): "
+                          + decrypt_it(obj.msg_body);
+                        console.log(new Date(obj.msg_date), new Date().getTime() - startTime, text);
+
+                        var li = "<li id='d" + obj.msg_date + "'>" +
+                            "<p id='title' style='white-space:pre-wrap;'>" + text + "</p>" +
+                            "</li>";
+                        $("#list").append(li);
+                    }
+
+                    $("#list").listview("refresh");
+                    console.log("totalStartTime", new Date().getTime() - totalStartTime)
+                }
+            });
+        });
+    });
+</script>
+
+<body>
+    <div data-role="page" id="pageone">
+        <a id="testme" data-role="button" data-inline="true">刷新</a>
+        <a href="#setting" data-role="button" data-inline="true" data-rel="dialog">设置</a>
+        <ul id="list" data-role="listview" data-inset="true">
+        </ul>
+    </div>
+
+    <div data-role="page" id="setting">
+        <label for="privkey">Private Key</label>
+        <textarea name="privkey" id="privkey"></textarea>
+        <label for="pubkey">Public Key</label>
+        <textarea name="pubkey" id="pubkey"></textarea>
+        <a data-role="button" data-rel="back" data-theme="b">完成</a>
+    </div>
+</body>
+
+</html>
