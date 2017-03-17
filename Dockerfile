@@ -1,4 +1,4 @@
-FROM samchang/webase
+FROM luafan/webase
 
 ENV MARIA_DATABASE_NAME test
 
