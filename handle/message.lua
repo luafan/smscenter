@@ -92,7 +92,7 @@ local function list_message(ctx, publickey)
 
   local list = {}
   for i,producer in ipairs(producers) do
-    local msgs = ctx.sms_body("list", "where producerid=? order by id desc limit 0,5", producer.id)
+    local msgs = ctx.sms_body("list", "where producerid=? order by id desc limit 0,20", producer.id)
     for i,v in ipairs(msgs) do
       v.deviceid = producer.deviceid
       table.insert(list, v)
