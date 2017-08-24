@@ -16,6 +16,7 @@ return {
   ["sms_producer"] = {
     ["publickeyid"] = "int(11) NOT NULL",
     ["deviceid"] = "varchar(256)",
+    ["batterylevel"] = "int(11) NOT NULL DEFAULT '10000'",
     "INDEX `publickeyid_deviceid` (`publickeyid`, `deviceid`)",
   },
   ["sms_body"] = {

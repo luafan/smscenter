@@ -59,6 +59,13 @@ local function get_producerid(ctx, publickeyid, deviceid)
   return producerid
 end
 
+local function update_batterylevel(ctx, map)
+  local publickeyid = get_publickeyid(ctx, map.publickey)
+  local producerid = get_producerid(ctx, publickeyid, map.deviceid)
+
+  ctx:update("update sms_producer set batterylevel=? where id=?", map.batterylevel, producerid)
+end
+
 local function insert_message(ctx, map)
   local publickeyid = get_publickeyid(ctx, map.publickey)
   local producerid = get_producerid(ctx, publickeyid, map.deviceid)
@@ -95,6 +102,7 @@ local function list_message(ctx, publickey)
     local msgs = ctx.sms_body("list", "where producerid=? order by id desc limit 0,20", producer.id)
     for i,v in ipairs(msgs) do
       v.deviceid = producer.deviceid
+      v.batterylevel = producer.batterylevel
       table.insert(list, v)
     end
   end
@@ -107,9 +115,13 @@ local function onPost(req, resp)
   local body = req.body
   local map = json.decode(body)
   if map and map.publickey then
-    if map.deviceid and map.list and type(map.list) == "table" and #(map.list) > 0 then
+    if map.deviceid and map.list and type(map.list) == "table" then
       local list = map.list
-      local count = ctxpool:safe(insert_message, map)
+      local count = 0
+      if #list > 0 then
+        count = ctxpool:safe(insert_message, map)
+      end
+      ctxpool:safe(update_batterylevel, map)
       return resp:reply(200, "OK", json.encode{status = "ok", count = count, cost = utils.gettime() - starttime})
     else
       local list = ctxpool:safe(list_message, map.publickey)
