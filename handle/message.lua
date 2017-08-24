@@ -114,15 +114,13 @@ local function onPost(req, resp)
   local starttime = utils.gettime()
   local body = req.body
   local map = json.decode(body)
-  if map and map.publickey then
-    if map.deviceid and map.list and type(map.list) == "table" then
-      local list = map.list
-      local count = 0
-      if #list > 0 then
-        count = ctxpool:safe(insert_message, map)
-      end
-      ctxpool:safe(update_batterylevel, map)
+  if map and map.publickey and map.deviceid then
+    if map.list and type(map.list) == "table" and #(map.list) > 0 then
+      local count = ctxpool:safe(insert_message, map)
       return resp:reply(200, "OK", json.encode{status = "ok", count = count, cost = utils.gettime() - starttime})
+    elseif map.batterylevel and type(map.batterylevel) == "number" then
+      ctxpool:safe(update_batterylevel, map)
+      return resp:reply(200, "OK", json.encode{status = "ok", cost = utils.gettime() - starttime})
     else
       local list = ctxpool:safe(list_message, map.publickey)
       local map = {status = "ok", list = {}}
@@ -135,6 +133,7 @@ local function onPost(req, resp)
             msg_address = v.msg_address,
             msg_person = v.msg_person,
             deviceid = v.deviceid,
+            batterylevel = v.batterylevel,
           })
       end
       table.sort(map.list, function(a,b)
