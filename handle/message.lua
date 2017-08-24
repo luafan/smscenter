@@ -164,6 +164,7 @@ local function onGet(req, resp)
           msg_address = v.msg_address,
           msg_person = v.msg_person,
           deviceid = v.deviceid,
+          batterylevel = v.batterylevel,
         })
     end
 
