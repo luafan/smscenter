@@ -25,7 +25,7 @@ return {
     ["msg_threadid"] = "int(11) NOT NULL",
     ["msg_type"] = "int(11) NOT NULL",
     ["msg_read"] = "int(11) NOT NULL",
-    ["msg_status"] = "int(11) NOT NULL",
+    ["msg_status"] = "int(11) NOT NULL default 0",
     ["msg_address"] = "varchar(128)",
     ["msg_person"] = "varchar(128)",
     ["msg_body"] = "varchar(1024)",
